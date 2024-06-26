@@ -7,34 +7,72 @@ using UnityEngine;
 
 public class StructureManager : MonoBehaviour
 {
-    public StructurePrefabWeighted[] housesPrefabe, PabrikPrefabs;
+    public StructurePrefabWeighted[] housesPrefabs, PabrikPrefabs, treesPrefabs;
     public PlacementManager placementManager;
 
-    private float[] houseWeights, pabrikWeights;
+    private float[] houseWeights, pabrikWeights, treesWeights;
 
     private void Start()
     {
-        houseWeights = housesPrefabe.Select(prefabStats => prefabStats.weight).ToArray();
+        houseWeights = housesPrefabs.Select(prefabStats => prefabStats.weight).ToArray();
         pabrikWeights = PabrikPrefabs.Select(prefabStats => prefabStats.weight).ToArray();
+        treesWeights = treesPrefabs.Select(prefabStats => prefabStats.weight).ToArray();
     }
 
     public void PlaceHouse(Vector3Int position)
     {
+        int price = StatsManager.Instance.housePrice;
+        if (StatsManager.Instance.coin < price)
+        {
+            NotificationHandler.Instance.SendNotification("Need " + price + " coins!");
+            Debug.Log("Need " + price + " coins!");
+            return;
+        }
         if (CheckPositionBeforePlacement(position))
         {
             int randomIndex = GetRandomWeightedIndex(houseWeights);
-            placementManager.PlaceObjectOnTheMap(position, housesPrefabe[randomIndex].prefab, CellType.Structure);
+            placementManager.PlaceObjectOnTheMap(position, housesPrefabs[randomIndex].prefab, CellType.Structure, buildingPrefabindex:randomIndex);
             // AudioPlayer.instance.PlayPlacementSound();
+
+            StatsManager.Instance.PlacedHouse();
         }
     }
 
     public void PlacePabrik(Vector3Int position)
     {
+        int price = StatsManager.Instance.pabrikPrice;
+        if(StatsManager.Instance.coin < price)
+        {
+            NotificationHandler.Instance.SendNotification("Need " + price + " coins!");
+            Debug.Log("Need " + price + " coins!");
+            return;
+        }
         if (CheckPositionBeforePlacement(position))
         {
             int randomIndex = GetRandomWeightedIndex(pabrikWeights);
-            placementManager.PlaceObjectOnTheMap(position, PabrikPrefabs[randomIndex].prefab, CellType.Structure);
+            placementManager.PlaceObjectOnTheMap(position, PabrikPrefabs[randomIndex].prefab, CellType.Structure, buildingPrefabindex: randomIndex);
             // AudioPlayer.instance.PlayPlacementSound();
+
+            StatsManager.Instance.PlacedPabrik();
+        }
+    }
+
+    public void PlaceTrees(Vector3Int position)
+    {
+        int price = StatsManager.Instance.treesPrice;
+        if (StatsManager.Instance.coin < price)
+        {
+            NotificationHandler.Instance.SendNotification("Need " + price + " coins!");
+            Debug.Log("Need " + price + " coins!");
+            return;
+        }
+        if (CheckTreePosition(position))
+        {
+            int randomIndex = GetRandomWeightedIndex(treesWeights);
+            placementManager.PlaceObjectOnTheMap(position, treesPrefabs[randomIndex].prefab, CellType.Structure);
+            // AudioPlayer.instance.PlayPlacementSound();
+
+            StatsManager.Instance.PlacedTrees();
         }
     }
 
@@ -63,20 +101,63 @@ public class StructureManager : MonoBehaviour
     {                                                                   
         if (placementManager.CheckIfPositionInBound(position)== false)
         {
+            NotificationHandler.Instance.SendNotification("This Position is out of bounds");
             Debug.Log("This Position is out of bounds");
             return false;
         }
         if (placementManager.CheckIfPositionIsFree(position)== false)
         {
+            NotificationHandler.Instance.SendNotification("This Position is not empty");
             Debug.Log("This position is not empty");
             return false;
         }
         if (placementManager.GetNeighboursOfTypeFor(position,CellType.Road).Count <= 0)
         {
+            NotificationHandler.Instance.SendNotification("Must be placed near a road");
             Debug.Log("Must be placed near a road");
             return false;
         }
         return true;
+    }
+
+    private bool CheckTreePosition(Vector3Int position)
+    {
+        if (placementManager.CheckIfPositionInBound(position) == false)
+        {
+            NotificationHandler.Instance.SendNotification("This Position is out of bounds");
+            Debug.Log("This Position is out of bounds");
+            return false;
+        }
+        if (placementManager.CheckIfPositionIsFree(position) == false)
+        {
+            NotificationHandler.Instance.SendNotification("This position is not empty");
+            Debug.Log("This position is not empty");
+            return false;
+        }
+        return true;
+    }
+
+    internal void PlaceLoadedStructure(Vector3Int position, int buildingPrefabindex, CellType buildingType)
+    {
+        switch (buildingType)
+        {
+            case CellType.Structure:
+                placementManager.PlaceObjectOnTheMap(position, housesPrefabs[buildingPrefabindex].prefab, CellType.Structure, buildingPrefabindex:buildingPrefabindex);
+                break;
+            case CellType.SpecialStructure:
+                placementManager.PlaceObjectOnTheMap(position, PabrikPrefabs[buildingPrefabindex].prefab, CellType.Structure, buildingPrefabindex:buildingPrefabindex);
+                break;
+            // case CellType.TreeStructure:
+            //     placementManager.PlaceObjectOnTheMap(position, treesPrefabs[buildingPrefabindex].prefab, CellType.Structure, buildingPrefabindex:buildingPrefabindex);
+            //     break;
+            default:
+                break;
+        }
+    }
+
+    public Dictionary<Vector3Int, StructureModel> GetAllStructures()
+    {
+        return placementManager.GetAllStructures();     
     }
 }
 

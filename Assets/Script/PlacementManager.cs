@@ -30,10 +30,10 @@ public class PlacementManager : MonoBehaviour
         return false;
     }
 
-    internal void PlaceObjectOnTheMap(Vector3Int position, GameObject structurePrefab, CellType type)
+    internal void PlaceObjectOnTheMap(Vector3Int position, GameObject structurePrefab, CellType type, int buildingPrefabindex = -1)
     {
         placementGrip[position.x, position.z] = type;
-        StructureModel structure = CreateANewStructureModel(position, structurePrefab, type);
+        StructureModel structure = CreateANewStructureModel(position, structurePrefab, type, buildingPrefabindex);
         structureDictionary.Add(position, structure);
         DestroyNatureAt(position);
     }
@@ -57,10 +57,10 @@ public class PlacementManager : MonoBehaviour
         return placementGrip[position.x, position.z] == type;
     }
 
-    internal void PlaceTemporaryStructure(Vector3Int position, GameObject structurePrefab, CellType type)
+    internal void PlaceTemporaryStructure(Vector3Int position, GameObject structurePrefab, CellType type, int buildingPrefabindex = -1)
     {
         placementGrip[position.x, position.z] = type;
-        StructureModel structure = CreateANewStructureModel(position, structurePrefab, type);
+        StructureModel structure = CreateANewStructureModel(position, structurePrefab, type, buildingPrefabindex);
         temporaryRoadobjects.Add(position, structure);
     }
 
@@ -75,13 +75,13 @@ public class PlacementManager : MonoBehaviour
         return neighbours;
     }
 
-    private StructureModel CreateANewStructureModel(Vector3Int position, GameObject structurePrefab, CellType type)
+    private StructureModel CreateANewStructureModel(Vector3Int position, GameObject structurePrefab, CellType type, int buildingPrefabindex)
     {
         GameObject structure = new GameObject(type.ToString());
         structure.transform.SetParent(transform);
         structure.transform.localPosition = position;
         var structureModel = structure.AddComponent<StructureModel>();
-        structureModel.CreateModel(structurePrefab);
+        structureModel.CreateModel(structurePrefab, buildingPrefabindex, type);
         return structureModel;
     }
 
@@ -123,6 +123,11 @@ public class PlacementManager : MonoBehaviour
             temporaryRoadobjects[position].SwapModel(newModel,rotation);
         else if (structureDictionary.ContainsKey(position))
             structureDictionary[position].SwapModel(newModel,rotation);
+    }
+
+    public Dictionary<Vector3Int, StructureModel> GetAllStructures()
+    {
+        return structureDictionary;
     }
 }
 

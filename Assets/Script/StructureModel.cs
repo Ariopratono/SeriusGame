@@ -6,10 +6,20 @@ public class StructureModel : MonoBehaviour
 {
     float yHeight = 0;
 
-    public void CreateModel(GameObject model)
+    public Vector3Int RoadPosition { get; set; }
+
+    [field: SerializeField]
+    public CellType BuildingType { get; private set; }
+
+    [field: SerializeField]
+    public int BuildingPrefabIndex { get; private set; }
+
+    public void CreateModel(GameObject model, int buildingPrefabindex, CellType buildingType)
     {
         var structure = Instantiate(model, transform);
         yHeight = structure.transform.position.y;
+        BuildingType = buildingType;
+        BuildingPrefabIndex = buildingPrefabindex;
     }
 
     public void SwapModel(GameObject model, Quaternion rotation)
